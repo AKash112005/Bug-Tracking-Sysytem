@@ -12,6 +12,14 @@ exports.createUserByAdmin = async (req, res) => {
       return res.status(400).json({ message: "All fields required" });
     }
 
+    const adminCount = await User.countDocuments({ role: "admin" });
+
+    if (adminCount > 0 && req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can create users",
+      });
+    }
+
     const exists = await User.findOne({ email });
     if (exists) {
       return res.status(400).json({ message: "User already exists" });
@@ -21,7 +29,7 @@ exports.createUserByAdmin = async (req, res) => {
 
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       role,
       isActive: true,
@@ -34,13 +42,13 @@ exports.createUserByAdmin = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        isActive: user.isActive,
       },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /* =========================
    ADMIN: GET USERS

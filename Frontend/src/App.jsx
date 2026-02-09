@@ -3,6 +3,7 @@ import AdminDashboard from "./pages/admindashboard";
 import DeveloperDashboard from "./pages/developerdashboard";
 import TesterDashboard from "./pages/testerdashboard";
 import Login from "./pages/login";
+import ViewerDashboard from "./pages/viewerdashboard";
 import { isAuthenticated, getRole } from "./utils/auth";
 
 
@@ -44,6 +45,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+          path="/viewer"
+          element={
+            <ProtectedRoute role="viewer">
+              <ViewerDashboard />
+            </ProtectedRoute>
+        }
+/>
+
     </Routes>
   );
 }

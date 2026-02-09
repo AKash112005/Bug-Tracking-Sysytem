@@ -16,7 +16,7 @@ const {
 router.post("/", auth, role(["tester"]), createBug);
 
 // Admin views all bugs
-router.get("/", auth, getAllBugs);
+router.get("/", auth, role(["admin", "viewer"]), getAllBugs);
 
 // Admin assigns bug
 router.post("/assign", auth, role(["admin"]), assignBug);

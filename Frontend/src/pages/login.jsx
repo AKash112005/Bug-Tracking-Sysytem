@@ -1,71 +1,79 @@
 import { useState } from "react";
 import api from "../api/axios";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault(); // 🔴 REQUIRED
+
+    console.log("LOGIN CLICKED");
+
+    if (!email || !password) {
+      toast.error("Email and password required");
+      return;
+    }
+
     try {
+      console.log("SENDING REQUEST");
+
       const res = await api.post("/auth/login", {
         email,
         password,
       });
 
-      const { token, role } = res.data;
+      console.log("LOGIN RESPONSE:", res.data);
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
 
-      if (role === "admin") window.location.href = "/admin";
-      if (role === "developer") window.location.href = "/developer";
-      if (role === "tester") window.location.href = "/tester";
+      toast.success("Login successful");
+
+      if (res.data.role === "admin") navigate("/admin");
+      else if (res.data.role === "developer") navigate("/developer");
+      else if (res.data.role === "tester") navigate("/tester");
+      else if (res.data.role === "viewer") navigate("/viewer");
     } catch (err) {
-      setError("Invalid email or password");
+      console.error("LOGIN ERROR:", err);
+      toast.error(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center text-indigo-600">
-          Bug Tracker
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-8 rounded-xl shadow w-96"
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
 
-        <p className="text-center text-slate-500 mt-2">
-          Sign in to continue
-        </p>
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border p-2 rounded mb-4"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        {error && (
-          <p className="text-red-500 text-center mt-4">{error}</p>
-        )}
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full border p-2 rounded mb-4"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-        <div className="mt-8 space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <button
-            onClick={handleLogin}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
-          >
-            Login
-          </button>
-        </div>
-      </div>
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+        >
+          Login
+        </button>
+      </form>
     </div>
   );
 }

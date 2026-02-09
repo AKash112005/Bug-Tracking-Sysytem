@@ -1,22 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-const { register, login } = require("../Controllers/AuthController");
-const auth = require("../middleware/authMiddleware");
+// IMPORTANT: exact path + exact file name
+const AuthController = require("../controllers/authcontroller");
 
-// register
-router.post("/register", register);
+// SAFETY CHECK (TEMP – REMOVE LATER)
+if (!AuthController.login) {
+  throw new Error("AuthController.login is undefined");
+}
 
-// login
-router.post("/login", login);
-
-// 🔐 PROTECTED ROUTE (THIS WAS MISSING)
-router.get("/protected", auth, (req, res) => {
-  res.json({
-    message: "Access granted",
-    user: req.user
-  });
-  
-});
+router.post("/login", AuthController.login);
 
 module.exports = router;

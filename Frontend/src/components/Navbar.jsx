@@ -2,6 +2,9 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { logout, getRole } from "../utils/auth";
 
+const role = getRole();
+
+const dashboardPath = role === "admin"? "/admin": role === "developer"? "/developer": role === "tester"? "/tester": "/viewer";
 
 export default function Navbar() {
   const navigate = useNavigate();

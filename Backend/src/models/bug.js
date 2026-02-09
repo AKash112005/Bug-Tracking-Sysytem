@@ -12,7 +12,7 @@ const bugSchema = new mongoose.Schema(
     },
     status: {
         type: String,
-        enum: ["open", "assigned", "in-progress", "fixed"],
+        enum: ["open", "assigned", "in-progress", "fixed","assigned"],
         default: "open",
     },
     createdBy: {
@@ -29,3 +29,4 @@ const bugSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Bug", bugSchema); // 🔥 REQUIRED
+module.exports = mongoose.models.Bug || mongoose.model("Bug", bugSchema);

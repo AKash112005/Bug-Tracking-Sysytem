@@ -116,3 +116,29 @@ exports.updateStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.assignBug = async (req, res) => {
+  try {
+    const { bugId, developerId } = req.body;
+
+    if (!bugId || !developerId) {
+      return res.status(400).json({ message: "BugId and DeveloperId required" });
+    }
+
+    const bug = await Bug.findById(bugId);
+    if (!bug) {
+      return res.status(404).json({ message: "Bug not found" });
+    }
+
+    bug.assignedTo = developerId;
+    bug.status = "assigned"; // ✅ MUST MATCH ENUM
+
+    await bug.save();
+
+    res.json({ message: "Bug assigned successfully" });
+  } catch (err) {
+    console.error("ASSIGN ERROR:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+};
+
