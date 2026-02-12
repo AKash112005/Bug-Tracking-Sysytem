@@ -19,7 +19,8 @@ export default function ViewerDashboard() {
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-slate-100 p-10">
+      <div className="min-h-screen bg-slate-100 p-10 pt-24">
+
         <h1 className="text-3xl font-bold text-slate-700 mb-6">
           Viewer Dashboard
         </h1>

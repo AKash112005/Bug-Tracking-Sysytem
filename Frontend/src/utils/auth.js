@@ -1,5 +1,5 @@
 export const isAuthenticated = () => {
-  return Boolean(localStorage.getItem("token"));
+  return !!localStorage.getItem("token");
 };
 
 export const getRole = () => {
