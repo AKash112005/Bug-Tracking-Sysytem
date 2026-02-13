@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 
 export default function DeveloperDashboard() {
   const [bugs, setBugs] = useState([]);
+  const user = getUser();
 
   useEffect(() => {
     fetchAssignedBugs();
@@ -27,9 +28,11 @@ export default function DeveloperDashboard() {
   };
 
   return (
+    
     <>
+    
       <Navbar />
-
+      
       <div className="min-h-screen bg-slate-100 p-10 pt-24">
 
         <h1 className="text-3xl font-bold text-green-600 mb-6">

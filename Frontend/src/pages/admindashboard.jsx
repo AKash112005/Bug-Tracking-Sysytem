@@ -3,55 +3,27 @@ import api from "../api/axios";
 import StatusBadge from "../components/StatusBadge";
 import DashboardStats from "../components/DashboardStats";
 import toast from "react-hot-toast";
-
+import { getUser } from "../utils/auth";
 
 export default function AdminDashboard() {
+  const user = getUser(); // ✅ Get logged-in user
+
   const [bugs, setBugs] = useState([]);
   const [developers, setDevelopers] = useState([]);
   const [selectedDev, setSelectedDev] = useState({});
   const [filter, setFilter] = useState("all");
-const [newUser, setNewUser] = useState({
-  name: "",
-  email: "",
-  password: "",
-  role: "developer",
-});
+
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "developer",
+  });
 
   useEffect(() => {
     fetchBugs();
     fetchDevelopers();
   }, []);
-  const createUser = async () => {
-  const { name, email, password, role } = newUser;
-
-  if (!name || !email || !password) {
-    toast.error("All fields are required");
-    return;
-  }
-
-  try {
-    await api.post("/users", {
-      name,
-      email,
-      password,
-      role,
-    });
-
-    toast.success("User created successfully");
-
-    setNewUser({
-      name: "",
-      email: "",
-      password: "",
-      role: "developer",
-    });
-
-    // refresh developer dropdown
-    fetchDevelopers();
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Failed to create user");
-  }
-};
 
   const fetchBugs = async () => {
     const res = await api.get("/bugs");
@@ -63,8 +35,35 @@ const [newUser, setNewUser] = useState({
     setDevelopers(res.data);
   };
 
+  const createUser = async () => {
+    const { name, email, password, role } = newUser;
+
+    if (!name || !email || !password) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    try {
+      await api.post("/users", { name, email, password, role });
+
+      toast.success("User created successfully");
+
+      setNewUser({
+        name: "",
+        email: "",
+        password: "",
+        role: "developer",
+      });
+
+      fetchDevelopers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create user");
+    }
+  };
+
   const assignBug = async (bugId) => {
     const developerId = selectedDev[bugId];
+
     if (!developerId) {
       toast.error("Select a developer");
       return;
@@ -82,90 +81,99 @@ const [newUser, setNewUser] = useState({
   const filteredBugs =
     filter === "all"
       ? bugs
-      : bugs.filter(bug => bug.status === filter);
+      : bugs.filter((bug) => bug.status === filter);
 
   return (
     <div className="min-h-screen bg-slate-100 p-10 pt-24">
-      <h1 className="text-3xl font-bold text-indigo-600 mb-8">
-        Admin Dashboard
+      
+      {/* ✅ Personalized Welcome */}
+      <h1 className="text-3xl font-bold text-indigo-600 mb-2">
+        Welcome, {user?.name} 👋
       </h1>
 
-      {/* ✅ STATS ONLY */}
+      <p className="text-slate-500 mb-8">
+        Manage bugs and users efficiently.
+      </p>
+
+      {/* 🔥 Dashboard Stats */}
       <DashboardStats bugs={bugs} />
-         {/* 👤 CREATE USER (ADMIN ONLY) */}
-            <div className="bg-white p-6 rounded-xl shadow mb-10">
-              <h2 className="text-xl font-semibold mb-4">Create New User</h2>
 
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  className="border p-2 rounded"
-                  placeholder="Name"
-                  value={newUser.name}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, name: e.target.value })
-                  }
-                />
+      {/* 👤 CREATE USER */}
+      <div className="bg-white p-6 rounded-xl shadow mb-10">
+        <h2 className="text-xl font-semibold mb-4">Create New User</h2>
 
-                <input
-                  className="border p-2 rounded"
-                  placeholder="Email"
-                  value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
-                />
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            className="border p-2 rounded"
+            placeholder="Name"
+            value={newUser.name}
+            onChange={(e) =>
+              setNewUser({ ...newUser, name: e.target.value })
+            }
+          />
 
-                <input
-                  type="password"
-                  className="border p-2 rounded"
-                  placeholder="Password"
-                  value={newUser.password}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, password: e.target.value })
-                  }
-                />
+          <input
+            className="border p-2 rounded"
+            placeholder="Email"
+            value={newUser.email}
+            onChange={(e) =>
+              setNewUser({ ...newUser, email: e.target.value })
+            }
+          />
 
-                <select
-                  className="border p-2 rounded"
-                  value={newUser.role}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, role: e.target.value })
-                  }
-                >
-                  <option value="developer">Developer</option>
-                  <option value="tester">Tester</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              </div>
+          <input
+            type="password"
+            className="border p-2 rounded"
+            placeholder="Password"
+            value={newUser.password}
+            onChange={(e) =>
+              setNewUser({ ...newUser, password: e.target.value })
+            }
+          />
 
-              <button
-                onClick={createUser}
-                className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
-              >
-                Create User
-              </button>
-            </div>
+          <select
+            className="border p-2 rounded"
+            value={newUser.role}
+            onChange={(e) =>
+              setNewUser({ ...newUser, role: e.target.value })
+            }
+          >
+            <option value="developer">Developer</option>
+            <option value="tester">Tester</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+
+        <button
+          onClick={createUser}
+          className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+        >
+          Create User
+        </button>
+      </div>
 
       {/* FILTERS */}
       <div className="flex gap-3 my-8">
-        {["all", "open", "assigned", "in-progress", "fixed"].map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded capitalize ${
-              filter === status
-                ? "bg-indigo-600 text-white"
-                : "bg-white border"
-            }`}
-          >
-            {status}
-          </button>
-        ))}
+        {["all", "open", "assigned", "in-progress", "fixed"].map(
+          (status) => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-4 py-2 rounded capitalize ${
+                filter === status
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white border"
+              }`}
+            >
+              {status}
+            </button>
+          )
+        )}
       </div>
 
       {/* BUG LIST */}
       <div className="grid gap-6">
-        {filteredBugs.map(bug => (
+        {filteredBugs.map((bug) => (
           <div key={bug._id} className="bg-white p-6 rounded-xl shadow">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">{bug.title}</h2>
@@ -185,7 +193,7 @@ const [newUser, setNewUser] = useState({
                 }
               >
                 <option value="">Select Developer</option>
-                {developers.map(dev => (
+                {developers.map((dev) => (
                   <option key={dev._id} value={dev._id}>
                     {dev.email}
                   </option>
