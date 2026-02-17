@@ -21,11 +21,51 @@ export default function AdminDashboard() {
     password: "",
     role: "developer",
   });
+const [projects, setProjects] = useState([]);
+const [newProject, setNewProject] = useState({
+  projectId: "",
+  projectName: "",
+  description: "",
+});
+  const createProject = async () => {
+  const { projectId, projectName, description } = newProject;
+
+  if (!projectId || !projectName) {
+    toast.error("Project ID & Name required");
+    return;
+  }
+
+  try {
+    await api.post("/projects", newProject);
+    toast.success("Project created successfully");
+
+    setNewProject({
+      projectId: "",
+      projectName: "",
+      description: "",
+    });
+
+    fetchProjects();
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Project creation failed");
+  }
+};
+
 
   useEffect(() => {
     fetchBugs();
     fetchDevelopers();
   }, []);
+const fetchProjects = async () => {
+  const res = await api.get("/projects");
+  setProjects(res.data);
+};
+
+useEffect(() => {
+  fetchBugs();
+  fetchDevelopers();
+  fetchProjects();
+}, []);
 
   const fetchBugs = async () => {
     const res = await api.get("/bugs");
@@ -240,15 +280,81 @@ export default function AdminDashboard() {
 
         {/* ================= PROJECTS TAB ================= */}
         {activeTab === "projects" && (
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="text-xl font-semibold mb-4">
-              Project Information
-            </h2>
-            <p><strong>Project ID:</strong> BUG-TRACKER-001</p>
-            <p><strong>Status:</strong> Active</p>
-          </div>
-        )}
+          <>
+            {/* 🔵 Create Project (Admin Only) */}
+            <div className="bg-white p-6 rounded-xl shadow mb-8">
+              <h2 className="text-xl font-semibold mb-4">
+                Create New Project
+              </h2>
 
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  className="border p-2 rounded"
+                  placeholder="Project ID"
+                  value={newProject.projectId}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, projectId: e.target.value })
+                  }
+                />
+
+                <input
+                  className="border p-2 rounded"
+                  placeholder="Project Name"
+                  value={newProject.projectName}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, projectName: e.target.value })
+                  }
+                />
+
+                <input
+                  className="border p-2 rounded col-span-2"
+                  placeholder="Description"
+                  value={newProject.description}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, description: e.target.value })
+                  }
+                />
+              </div>
+
+              <button
+                onClick={createProject}
+                className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+              >
+                Create Project
+              </button>
+            </div>
+
+            {/* 🔵 Existing Projects List */}
+            <div className="bg-white p-6 rounded-xl shadow">
+              <h2 className="text-xl font-semibold mb-4">
+                Existing Projects
+              </h2>
+
+              {projects.length === 0 ? (
+                <p className="text-slate-500">No projects created yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {projects.map((project) => (
+                    <div
+                      key={project._id}
+                      className="border p-4 rounded-lg"
+                    >
+                      <h3 className="font-semibold text-lg">
+                        {project.projectName}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        ID: {project.projectId}
+                      </p>
+                      <p className="text-slate-600 mt-1">
+                        {project.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

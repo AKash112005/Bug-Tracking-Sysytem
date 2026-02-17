@@ -3,6 +3,7 @@ import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
+import { getUser } from "../utils/auth";
 
 export default function DeveloperDashboard() {
   const [bugs, setBugs] = useState([]);
