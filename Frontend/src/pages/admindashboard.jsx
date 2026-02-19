@@ -34,14 +34,7 @@ export default function AdminDashboard() {
     description: "",
   });
 
-  useEffect(() => {
-    fetchBugs();
-    fetchDevelopers();
-    fetchUsers();
-    fetchProjects();
-  }, []);
-
-  /* ================= FETCH ================= */
+  /* ================= FETCH FUNCTIONS ================= */
 
   const fetchBugs = async () => {
     const res = await api.get("/bugs");
@@ -63,12 +56,26 @@ export default function AdminDashboard() {
     setProjects(res.data);
   };
 
-  /* ================= CREATE USER ================= */
+  /* ================= AUTO REFRESH ================= */
+
+  useEffect(() => {
+    fetchBugs();
+    fetchDevelopers();
+    fetchUsers();
+    fetchProjects();
+
+    const interval = setInterval(() => {
+      fetchBugs();
+      fetchProjects();
+    }, 5000); // refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ================= USER CREATE ================= */
 
   const createUser = async () => {
-    const { name, email, password } = newUser;
-
-    if (!name || !email || !password) {
+    if (!newUser.name || !newUser.email || !newUser.password) {
       toast.error("All fields required");
       return;
     }
@@ -84,12 +91,10 @@ export default function AdminDashboard() {
     }
   };
 
-  /* ================= CREATE PROJECT ================= */
+  /* ================= PROJECT CREATE ================= */
 
   const createProject = async () => {
-    const { projectId, projectName } = newProject;
-
-    if (!projectId || !projectName) {
+    if (!newProject.projectId || !newProject.projectName) {
       toast.error("Project ID & Name required");
       return;
     }
@@ -104,10 +109,11 @@ export default function AdminDashboard() {
     }
   };
 
-  /* ================= ASSIGN DEVELOPER ================= */
+  /* ================= ASSIGN BUG ================= */
 
   const assignBug = async (bugId) => {
     const developerId = selectedDev[bugId];
+    const projectId = selectedProject[bugId];
 
     if (!developerId) {
       toast.error("Select developer");
@@ -115,27 +121,13 @@ export default function AdminDashboard() {
     }
 
     try {
-      await api.post("/bugs/assign", { bugId, developerId });
-      toast.success("Developer assigned");
-      fetchBugs();
-    } catch {
-      toast.error("Assign failed");
-    }
-  };
+      await api.post("/bugs/assign", {
+        bugId,
+        developerId,
+        projectId,
+      });
 
-  /* ================= ASSIGN PROJECT ================= */
-
-  const assignProject = async (bugId) => {
-    const projectId = selectedProject[bugId];
-
-    if (!projectId) {
-      toast.error("Select project");
-      return;
-    }
-
-    try {
-      await api.post("/bugs/assign-project", { bugId, projectId });
-      toast.success("Project assigned");
+      toast.success("Bug assigned");
       fetchBugs();
     } catch {
       toast.error("Assign failed");
@@ -160,6 +152,8 @@ export default function AdminDashboard() {
     filter === "all"
       ? bugs
       : bugs.filter((bug) => bug.status === filter);
+
+  /* ================= RETURN ================= */
 
   return (
     <div className="flex bg-slate-100 min-h-screen">
@@ -236,7 +230,9 @@ export default function AdminDashboard() {
                   key={u._id}
                   className="border p-3 rounded mb-2 flex justify-between"
                 >
-                  <span>{u.name} ({u.role})</span>
+                  <span>
+                    {u.name} ({u.role})
+                  </span>
                   <span className="text-slate-500">{u.email}</span>
                 </div>
               ))}
@@ -256,7 +252,10 @@ export default function AdminDashboard() {
                   placeholder="Project ID"
                   value={newProject.projectId}
                   onChange={(e) =>
-                    setNewProject({ ...newProject, projectId: e.target.value })
+                    setNewProject({
+                      ...newProject,
+                      projectId: e.target.value,
+                    })
                   }
                 />
                 <input
@@ -264,7 +263,10 @@ export default function AdminDashboard() {
                   placeholder="Project Name"
                   value={newProject.projectName}
                   onChange={(e) =>
-                    setNewProject({ ...newProject, projectName: e.target.value })
+                    setNewProject({
+                      ...newProject,
+                      projectName: e.target.value,
+                    })
                   }
                 />
                 <input
@@ -272,7 +274,10 @@ export default function AdminDashboard() {
                   placeholder="Description"
                   value={newProject.description}
                   onChange={(e) =>
-                    setNewProject({ ...newProject, description: e.target.value })
+                    setNewProject({
+                      ...newProject,
+                      description: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -304,105 +309,75 @@ export default function AdminDashboard() {
 
         {/* ================= BUG REPORTS ================= */}
         {activeTab === "bugs" && (
-          <>
-            <div className="flex gap-3 mb-6">
-              {["all", "open", "assigned", "in-progress", "fixed"].map(
-                (status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilter(status)}
-                    className={`px-4 py-2 rounded capitalize ${
-                      filter === status
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white border"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                )
-              )}
-            </div>
-
-            <div className="grid gap-6">
-              {filteredBugs.map((bug) => (
-                <div
-                  key={bug._id}
-                  className="bg-white p-6 rounded-xl shadow relative"
+          <div className="grid gap-6">
+            {filteredBugs.map((bug) => (
+              <div
+                key={bug._id}
+                className="bg-white p-6 rounded-xl shadow relative"
+              >
+                <button
+                  onClick={() => deleteBug(bug._id)}
+                  className="absolute top-4 right-4 p-1 rounded-full text-red-500 hover:bg-red-100"
                 >
-                  <button
-                    onClick={() => deleteBug(bug._id)}
-                    className="absolute top-4 right-4 p-1 rounded-full
-                               text-red-500 hover:bg-red-100"
+                  <Trash2 size={16} />
+                </button>
+
+                <div className="flex justify-between">
+                  <h2 className="text-xl font-semibold">{bug.title}</h2>
+                  <StatusBadge status={bug.status} />
+                </div>
+
+                <p className="text-slate-600 mt-2">
+                  {bug.description}
+                </p>
+
+                {/* Assign Developer */}
+                <div className="flex gap-3 mt-4">
+                  <select
+                    className="border rounded px-3 py-2"
+                    onChange={(e) =>
+                      setSelectedDev({
+                        ...selectedDev,
+                        [bug._id]: e.target.value,
+                      })
+                    }
                   >
-                    <Trash2 size={16} />
-                  </button>
-
-                  <div className="flex justify-between">
-                    <h2 className="text-xl font-semibold">{bug.title}</h2>
-                    <StatusBadge status={bug.status} />
-                  </div>
-
-                  <p className="text-slate-600 mt-2">
-                    {bug.description}
-                  </p>
-
-                  {/* Assign Developer */}
-                  <div className="flex gap-3 mt-4">
-                    <select
-                      className="border rounded px-3 py-2"
-                      onChange={(e) =>
-                        setSelectedDev({
-                          ...selectedDev,
-                          [bug._id]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Developer</option>
-                      {developers.map((dev) => (
-                        <option key={dev._id} value={dev._id}>
-                          {dev.email}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={() => assignBug(bug._id)}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded"
-                    >
-                      Assign Dev
-                    </button>
-                  </div>
+                    <option value="">Select Developer</option>
+                    {developers.map((dev) => (
+                      <option key={dev._id} value={dev._id}>
+                        {dev.name}
+                      </option>
+                    ))}
+                  </select>
 
                   {/* Assign Project */}
-                  <div className="flex gap-3 mt-4">
-                    <select
-                      className="border rounded px-3 py-2"
-                      onChange={(e) =>
-                        setSelectedProject({
-                          ...selectedProject,
-                          [bug._id]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Project</option>
-                      {projects.map((p) => (
-                        <option key={p._id} value={p._id}>
-                          {p.projectName}
-                        </option>
-                      ))}
-                    </select>
+                  <select
+                    className="border rounded px-3 py-2"
+                    onChange={(e) =>
+                      setSelectedProject({
+                        ...selectedProject,
+                        [bug._id]: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select Project</option>
+                    {projects.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.projectName}
+                      </option>
+                    ))}
+                  </select>
 
-                    <button
-                      onClick={() => assignProject(bug._id)}
-                      className="bg-purple-600 text-white px-4 py-2 rounded"
-                    >
-                      Assign Project
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => assignBug(bug._id)}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded"
+                  >
+                    Assign
+                  </button>
                 </div>
-              ))}
-            </div>
-          </>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

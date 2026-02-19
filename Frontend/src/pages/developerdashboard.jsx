@@ -9,44 +9,45 @@ export default function DeveloperDashboard() {
   const [bugs, setBugs] = useState([]);
   const user = getUser();
 
-  useEffect(() => {
-    fetchAssignedBugs();
-  }, []);
-
+  /* ================= FETCH BUGS ================= */
   const fetchAssignedBugs = async () => {
     try {
       const res = await api.get("/bugs/assigned");
-
-      // Hide fixed bugs automatically
       const activeBugs = res.data.filter(
         (bug) => bug.status !== "fixed"
       );
-
       setBugs(activeBugs);
     } catch (err) {
-      toast.error("Failed to load bugs");
+      console.log(err);
     }
   };
 
+  /* ================= AUTO REFRESH ================= */
+  useEffect(() => {
+    fetchAssignedBugs();
+
+    const interval = setInterval(() => {
+      fetchAssignedBugs();
+    }, 5000); // every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ================= UPDATE STATUS ================= */
   const updateStatus = async (bugId, status) => {
     try {
       await api.put("/bugs/status", { bugId, status });
-      toast.success(`Status updated to ${status}`);
-      fetchAssignedBugs(); // refresh
+      toast.success(`Updated to ${status}`);
+      fetchAssignedBugs();
     } catch {
-      toast.error("Failed to update status");
+      toast.error("Update failed");
     }
   };
 
-  /* ===== Group Bugs by Project ===== */
+  /* ================= GROUP BY PROJECT ================= */
   const groupedBugs = bugs.reduce((acc, bug) => {
-    const projectName =
-      bug.project?.projectName || "Unassigned Project";
-
-    if (!acc[projectName]) {
-      acc[projectName] = [];
-    }
-
+    const projectName = bug.project?.projectName || "Unassigned Project";
+    if (!acc[projectName]) acc[projectName] = [];
     acc[projectName].push(bug);
     return acc;
   }, {});
@@ -56,37 +57,26 @@ export default function DeveloperDashboard() {
       <Navbar />
 
       <div className="min-h-screen bg-slate-100 p-10 pt-24">
-        {/* Welcome */}
         <h1 className="text-3xl font-bold text-green-600 mb-2">
           Welcome, {user?.name} 👋
         </h1>
 
-        <p className="text-slate-500 mb-8">
-          Here are your assigned project bugs.
-        </p>
-
         {bugs.length === 0 ? (
-          <p className="text-slate-500">
-            No assigned bugs.
-          </p>
+          <p className="text-slate-500">No assigned bugs.</p>
         ) : (
           Object.keys(groupedBugs).map((projectName) => (
             <div key={projectName} className="mb-10">
 
-              {/* ===== Project Header ===== */}
               <div className="bg-indigo-600 text-white p-4 rounded-lg mb-4 shadow">
                 <h2 className="text-lg font-semibold">
                   {projectName}
                 </h2>
-
                 <p className="text-sm opacity-90">
                   Project ID:{" "}
-                  {groupedBugs[projectName][0]?.project?.projectId ||
-                    "N/A"}
+                  {groupedBugs[projectName][0]?.project?.projectId || "N/A"}
                 </p>
               </div>
 
-              {/* ===== Bugs Under Project ===== */}
               <div className="grid gap-6">
                 {groupedBugs[projectName].map((bug) => (
                   <div
@@ -110,7 +100,7 @@ export default function DeveloperDashboard() {
                           onClick={() =>
                             updateStatus(bug._id, "in-progress")
                           }
-                          className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                          className="px-4 py-2 bg-yellow-500 text-white rounded"
                         >
                           In Progress
                         </button>
@@ -121,7 +111,7 @@ export default function DeveloperDashboard() {
                           onClick={() =>
                             updateStatus(bug._id, "fixed")
                           }
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          className="px-4 py-2 bg-green-600 text-white rounded"
                         >
                           Mark Fixed
                         </button>
