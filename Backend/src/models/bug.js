@@ -10,6 +10,12 @@ const bugSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      default: null,
+    },
+
     status: {
         type: String,
         enum: ["open", "assigned", "in-progress", "fixed","assigned"],
@@ -24,9 +30,10 @@ const bugSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Bug", bugSchema); // 🔥 REQUIRED
+module.exports = mongoose.model("Bug", bugSchema); //  REQUIRED
 module.exports = mongoose.models.Bug || mongoose.model("Bug", bugSchema);

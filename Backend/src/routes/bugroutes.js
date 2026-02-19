@@ -3,6 +3,8 @@ const router = express.Router();
 
 const auth = require("../middleware/authMiddleware");
 const role = require("../middleware/roleMiddleware");
+const { assignProject } = require("../controllers/bugcontroller");
+
 
 const {
   createBug,
@@ -10,6 +12,7 @@ const {
   assignBug,
   getAssignedBugs,
   updateStatus,
+  deleteBug,
 } = require("../controllers/bugcontroller"); //
 
 // Tester creates bug
@@ -26,5 +29,10 @@ router.get("/assigned", auth, role(["developer"]), getAssignedBugs);
 
 // Developer updates bug status
 router.put("/status", auth, role(["developer"]), updateStatus);
+
+// Admin deletes bug
+router.delete("/:id", auth, role(["admin"]), deleteBug);
+
+router.post("/assign-project", auth, role(["admin"]), assignProject);
 
 module.exports = router;

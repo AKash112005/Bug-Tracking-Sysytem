@@ -14,69 +14,124 @@ export default function DeveloperDashboard() {
   }, []);
 
   const fetchAssignedBugs = async () => {
-    const res = await api.get("/bugs/assigned");
-    setBugs(res.data);
+    try {
+      const res = await api.get("/bugs/assigned");
+
+      // Hide fixed bugs automatically
+      const activeBugs = res.data.filter(
+        (bug) => bug.status !== "fixed"
+      );
+
+      setBugs(activeBugs);
+    } catch (err) {
+      toast.error("Failed to load bugs");
+    }
   };
 
   const updateStatus = async (bugId, status) => {
     try {
       await api.put("/bugs/status", { bugId, status });
       toast.success(`Status updated to ${status}`);
-      fetchAssignedBugs();
+      fetchAssignedBugs(); // refresh
     } catch {
       toast.error("Failed to update status");
     }
   };
 
-  return (
-    
-    <>
-    
-      <Navbar />
-      
-      <div className="min-h-screen bg-slate-100 p-10 pt-24">
+  /* ===== Group Bugs by Project ===== */
+  const groupedBugs = bugs.reduce((acc, bug) => {
+    const projectName =
+      bug.project?.projectName || "Unassigned Project";
 
-        <h1 className="text-3xl font-bold text-green-600 mb-6">
-          Developer Dashboard
+    if (!acc[projectName]) {
+      acc[projectName] = [];
+    }
+
+    acc[projectName].push(bug);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="min-h-screen bg-slate-100 p-10 pt-24">
+        {/* Welcome */}
+        <h1 className="text-3xl font-bold text-green-600 mb-2">
+          Welcome, {user?.name} 👋
         </h1>
 
+        <p className="text-slate-500 mb-8">
+          Here are your assigned project bugs.
+        </p>
+
         {bugs.length === 0 ? (
-          <p className="text-slate-500">No assigned bugs.</p>
+          <p className="text-slate-500">
+            No assigned bugs.
+          </p>
         ) : (
-          <div className="grid gap-6">
-            {bugs.map((bug) => (
-              <div key={bug._id} className="bg-white p-6 rounded-xl shadow">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">{bug.title}</h2>
-                  <StatusBadge status={bug.status} />
-                </div>
+          Object.keys(groupedBugs).map((projectName) => (
+            <div key={projectName} className="mb-10">
 
-                <p className="text-slate-600 mt-2">{bug.description}</p>
+              {/* ===== Project Header ===== */}
+              <div className="bg-indigo-600 text-white p-4 rounded-lg mb-4 shadow">
+                <h2 className="text-lg font-semibold">
+                  {projectName}
+                </h2>
 
-                <div className="flex gap-3 mt-4">
-                  {bug.status !== "in-progress" && (
-                    <button
-                      onClick={() =>
-                        updateStatus(bug._id, "in-progress")
-                      }
-                      className="px-4 py-2 bg-yellow-500 text-white rounded"
-                    >
-                      In Progress
-                    </button>
-                  )}
-
-                  {bug.status !== "fixed" && (
-                    <button
-                      onClick={() => updateStatus(bug._id, "fixed")}
-                      className="px-4 py-2 bg-green-600 text-white rounded"
-                    >
-                      Mark Fixed
-                    </button>
-                  )}
-                </div>
+                <p className="text-sm opacity-90">
+                  Project ID:{" "}
+                  {groupedBugs[projectName][0]?.project?.projectId ||
+                    "N/A"}
+                </p>
               </div>
-            ))}
-          </div>
+
+              {/* ===== Bugs Under Project ===== */}
+              <div className="grid gap-6">
+                {groupedBugs[projectName].map((bug) => (
+                  <div
+                    key={bug._id}
+                    className="bg-white p-6 rounded-xl shadow"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-semibold">
+                        {bug.title}
+                      </h3>
+                      <StatusBadge status={bug.status} />
+                    </div>
+
+                    <p className="text-slate-600 mt-2">
+                      {bug.description}
+                    </p>
+
+                    <div className="flex gap-3 mt-4">
+                      {bug.status !== "in-progress" && (
+                        <button
+                          onClick={() =>
+                            updateStatus(bug._id, "in-progress")
+                          }
+                          className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                          In Progress
+                        </button>
+                      )}
+
+                      {bug.status !== "fixed" && (
+                        <button
+                          onClick={() =>
+                            updateStatus(bug._id, "fixed")
+                          }
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark Fixed
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
         )}
       </div>
     </>

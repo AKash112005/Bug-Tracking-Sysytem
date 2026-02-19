@@ -1,25 +1,48 @@
 const mongoose = require("mongoose");
 const Bug = require("../models/bug");
 
-/* ============================
-   Tester: Create Bug
-============================ */
+exports.assignProject = async (req, res) => {
+  try {
+    const { bugId, projectId } = req.body;
+
+    if (!bugId || !projectId) {
+      return res.status(400).json({ message: "BugId & ProjectId required" });
+    }
+
+    const bug = await Bug.findById(bugId);
+    if (!bug) {
+      return res.status(404).json({ message: "Bug not found" });
+    }
+
+    bug.project = projectId;
+    await bug.save();
+
+    res.json({ message: "Project assigned successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+  //  Tester: Create Bug
+
 exports.createBug = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, project } = req.body;
 
     if (!title || !description) {
-      return res
-        .status(400)
-        .json({ message: "Title and description are required" });
+      return res.status(400).json({
+        message: "Title and description are required",
+      });
     }
 
     const bug = await Bug.create({
       title,
       description,
+      project, 
       createdBy: req.user.id,
       status: "open",
       assignedTo: null,
+      
     });
 
     res.status(201).json(bug);
@@ -28,14 +51,15 @@ exports.createBug = async (req, res) => {
   }
 };
 
-/* ============================
-   Admin: View All Bugs
-============================ */
+
+  //  Admin / Viewer: View All Bugs
+
 exports.getAllBugs = async (req, res) => {
   try {
     const bugs = await Bug.find()
-      .populate("createdBy", "email role")
-      .populate("assignedTo", "email role");
+      .populate("project") 
+      .populate("createdBy", "name email role")
+      .populate("assignedTo", "name email role");
 
     res.json(bugs);
   } catch (error) {
@@ -43,60 +67,62 @@ exports.getAllBugs = async (req, res) => {
   }
 };
 
-/* ============================
-   Admin: Assign Bug to Developer
-============================ */
+
+  //  Admin: Assign Bug
+
 exports.assignBug = async (req, res) => {
   try {
-    console.log("🔥 ASSIGN BUG HIT");
-    console.log("REQ BODY:", req.body);
-    console.log("REQ USER:", req.user);
-
     const { bugId, developerId } = req.body;
 
+    if (!bugId || !developerId) {
+      return res.status(400).json({
+        message: "BugId and DeveloperId required",
+      });
+    }
+
     const bug = await Bug.findById(bugId);
-    console.log("BUG FOUND:", bug);
+    if (!bug) {
+      return res.status(404).json({ message: "Bug not found" });
+    }
 
     bug.assignedTo = developerId;
-    bug.status = "assigned";
+    bug.status = "assigned"; 
 
     await bug.save();
 
     res.json({ message: "Bug assigned successfully" });
   } catch (error) {
-    console.error("❌ ASSIGN BUG ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-/* ============================
-   Developer: View Assigned Bugs
-============================ */
+  //  Developer: View Assigned Bugs
+
 exports.getAssignedBugs = async (req, res) => {
   try {
     const developerId = new mongoose.Types.ObjectId(req.user.id);
 
     const bugs = await Bug.find({ assignedTo: developerId })
-      .populate("createdBy", "email")
-      .populate("assignedTo", "email");
-
+      .populate("project") // ✅ show project info
+      .populate("createdBy", "name email")
+      .populate("assignedTo", "name email");
     res.json(bugs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* ============================
-   Developer: Update Bug Status
-============================ */
+
+  //  Developer: Update Bug Status
+
 exports.updateStatus = async (req, res) => {
   try {
     const { bugId, status } = req.body;
 
     if (!bugId || !status) {
-      return res
-        .status(400)
-        .json({ message: "bugId and status are required" });
+      return res.status(400).json({
+        message: "bugId and status are required",
+      });
     }
 
     const bug = await Bug.findById(bugId);
@@ -105,7 +131,9 @@ exports.updateStatus = async (req, res) => {
     }
 
     if (!bug.assignedTo || bug.assignedTo.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your assigned bug" });
+      return res.status(403).json({
+        message: "Not your assigned bug",
+      });
     }
 
     bug.status = status;
@@ -116,29 +144,19 @@ exports.updateStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-exports.assignBug = async (req, res) => {
+//  Admin :delete Bugs
+exports.deleteBug = async (req, res) => {
   try {
-    const { bugId, developerId } = req.body;
+    const bug = await Bug.findById(req.params.id);
 
-    if (!bugId || !developerId) {
-      return res.status(400).json({ message: "BugId and DeveloperId required" });
-    }
-
-    const bug = await Bug.findById(bugId);
     if (!bug) {
       return res.status(404).json({ message: "Bug not found" });
     }
 
-    bug.assignedTo = developerId;
-    bug.status = "assigned"; // ✅ MUST MATCH ENUM
+    await bug.deleteOne();
 
-    await bug.save();
-
-    res.json({ message: "Bug assigned successfully" });
-  } catch (err) {
-    console.error("ASSIGN ERROR:", err.message);
-    res.status(500).json({ message: err.message });
+    res.json({ message: "Bug deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
-
