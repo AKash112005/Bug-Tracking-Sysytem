@@ -23,6 +23,25 @@ export default function AdminDashboard() {
   const [editingProject, setEditingProject] = useState(null);
   const [editProjectValue, setEditProjectValue] = useState("");
 
+  // Mock Notifications
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: "New bug reported: Login page issue", time: "2 mins ago", type: "bug" },
+    { id: 2, message: "User Demo assigned 3 bugs", time: "15 mins ago", type: "assign" },
+    { id: 3, message: "Project Hospital Management created", time: "1 hour ago", type: "project" },
+    { id: 4, message: "Bug #45 marked as fixed", time: "2 hours ago", type: "fixed" },
+    { id: 5, message: "New developer registered", time: "3 hours ago", type: "user" },
+  ]);
+
+  // Mock Settings
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    systemAlerts: true,
+    bugAssignmentNotifications: true,
+    dailyReport: false,
+    themeMode: "light",
+    maxBugsPerPage: 10,
+  });
+
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -206,13 +225,18 @@ export default function AdminDashboard() {
   /* ================= RETURN ================= */
 
   return (
-    <div className="flex bg-slate-100 min-h-screen">
+    <div className="flex bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <div className="flex-1 ml-64 p-10 pt-24">
-        <h1 className="text-3xl font-bold text-indigo-600 mb-2">
-          Welcome, {user?.name} 👋
-        </h1>
+        <div className="max-w-7xl mx-auto">
+          {/* Welcome Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+              Welcome, {user?.name} !
+            </h1>
+            <p className="text-slate-600 text-sm mt-2">System Administration Dashboard</p>
+          </div>
 
         {/* ================= DASHBOARD ================= */}
         {activeTab === "dashboard" && (
@@ -222,21 +246,24 @@ export default function AdminDashboard() {
         {/* ================= USERS ================= */}
         {activeTab === "users" && (
           <>
-            <div className="bg-white p-6 rounded-xl shadow mb-8">
-              <h2 className="text-xl font-semibold mb-4">Add New User</h2>
+            <div className="bg-white p-8 rounded-xl shadow-lg mb-8 border border-slate-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Add New User</h2>
+                <p className="text-slate-600 text-sm mt-1">Create a new user account</p>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <input
-                  className="border p-2 rounded"
-                  placeholder="Name"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Full Name"
                   value={newUser.name}
                   onChange={(e) =>
                     setNewUser({ ...newUser, name: e.target.value })
                   }
                 />
                 <input
-                  className="border p-2 rounded"
-                  placeholder="Email"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Email Address"
                   value={newUser.email}
                   onChange={(e) =>
                     setNewUser({ ...newUser, email: e.target.value })
@@ -244,7 +271,7 @@ export default function AdminDashboard() {
                 />
                 <input
                   type="password"
-                  className="border p-2 rounded"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Password"
                   value={newUser.password}
                   onChange={(e) =>
@@ -252,7 +279,7 @@ export default function AdminDashboard() {
                   }
                 />
                 <select
-                  className="border p-2 rounded"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   value={newUser.role}
                   onChange={(e) =>
                     setNewUser({ ...newUser, role: e.target.value })
@@ -266,14 +293,17 @@ export default function AdminDashboard() {
 
               <button
                 onClick={createUser}
-                className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded"
+                className="mt-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-200 shadow-lg"
               >
                 Create User
               </button>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow">
-              <h2 className="text-xl font-semibold mb-4">Existing Users</h2>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Existing Users</h2>
+                <p className="text-slate-600 text-sm mt-1">{users.length} total users</p>
+              </div>
 
               {users.map((u) => (
                 <div
@@ -312,12 +342,15 @@ export default function AdminDashboard() {
         {/* ================= PROJECTS ================= */}
         {activeTab === "projects" && (
           <>
-            <div className="bg-white p-6 rounded-xl shadow mb-8">
-              <h2 className="text-xl font-semibold mb-4">Create Project</h2>
+            <div className="bg-white p-8 rounded-xl shadow-lg mb-8 border border-slate-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Create Project</h2>
+                <p className="text-slate-600 text-sm mt-1">Add a new project to the system</p>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <input
-                  className="border p-2 rounded"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Project ID"
                   value={newProject.projectId}
                   onChange={(e) =>
@@ -328,7 +361,7 @@ export default function AdminDashboard() {
                   }
                 />
                 <input
-                  className="border p-2 rounded"
+                  className="border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Project Name"
                   value={newProject.projectName}
                   onChange={(e) =>
@@ -339,7 +372,7 @@ export default function AdminDashboard() {
                   }
                 />
                 <input
-                  className="border p-2 rounded col-span-2"
+                  className="border border-slate-300 p-3 rounded-lg col-span-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Description"
                   value={newProject.description}
                   onChange={(e) =>
@@ -353,20 +386,21 @@ export default function AdminDashboard() {
 
               <button
                 onClick={createProject}
-                className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded"
+                className="mt-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-200 shadow-lg"
               >
                 Create Project
               </button>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow">
-              <h2 className="text-xl font-semibold mb-4">
-                Existing Projects
-              </h2>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Existing Projects</h2>
+                <p className="text-slate-600 text-sm mt-1">{projects.length} total projects</p>
+              </div>
 
               {projects.map((p) => (
-                <div key={p._id} className="border p-3 rounded mb-2">
-                  <h3 className="font-semibold">{p.projectName}</h3>
+                <div key={p._id} className="border border-slate-200 p-4 rounded-lg mb-3 hover:shadow-md hover:border-indigo-300 transition">
+                  <h3 className="font-bold text-lg text-slate-900">{p.projectName}</h3>
                   <p className="text-sm text-slate-500">
                     ID: {p.projectId}
                   </p>
@@ -378,31 +412,65 @@ export default function AdminDashboard() {
 
         {/* ================= BUG REPORTS ================= */}
         {activeTab === "bugs" && (
-          <div className="grid gap-6">
-            {filteredBugs.map((bug) => (
-              <div
-                key={bug._id}
-                className="bg-white p-6 rounded-xl shadow"
+          <>
+            <div className="mb-6 flex gap-3">
+              <button
+                onClick={() => setFilter("all")}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  filter === "all"
+                    ? "bg-indigo-600 text-white shadow-lg"
+                    : "bg-white text-slate-700 border border-slate-300 hover:border-indigo-300"
+                }`}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold">{bug.title}</h2>
-                    <p className="text-slate-600 text-sm mt-1">{bug.description}</p>
-                  </div>
-                  <div className="flex gap-2 items-start">
-                    <StatusBadge status={bug.status} />
-                    <button
-                      onClick={() => deleteBug(bug._id)}
-                      className="p-1.5 rounded text-red-500 hover:bg-red-100 transition"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
+                All Bugs
+              </button>
+              <button
+                onClick={() => setFilter("open")}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  filter === "open"
+                    ? "bg-indigo-600 text-white shadow-lg"
+                    : "bg-white text-slate-700 border border-slate-300 hover:border-indigo-300"
+                }`}
+              >
+                Open
+              </button>
+              <button
+                onClick={() => setFilter("assigned")}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  filter === "assigned"
+                    ? "bg-indigo-600 text-white shadow-lg"
+                    : "bg-white text-slate-700 border border-slate-300 hover:border-indigo-300"
+                }`}
+              >
+                Assigned
+              </button>
+            </div>
 
-                {/* Display Project (Auto-selected from Tester) */}
-                <div className="mt-4 p-3 bg-slate-50 rounded border border-slate-200">
-                  <div className="flex justify-between items-center gap-4">
+            <div className="grid gap-6">
+              {filteredBugs.map((bug) => (
+                <div
+                  key={bug._id}
+                  className="bg-white p-6 rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-slate-900">{bug.title}</h2>
+                      <p className="text-slate-600 text-sm mt-1">{bug.description}</p>
+                    </div>
+                    <div className="flex gap-2 items-start">
+                      <StatusBadge status={bug.status} />
+                      <button
+                        onClick={() => deleteBug(bug._id)}
+                        className="p-1.5 rounded text-red-500 hover:bg-red-100 transition"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Display Project (Auto-selected from Tester) */}
+                  <div className="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
+                    <div className="flex justify-between items-center gap-4">
                     <div className="flex-1">
                       <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Project</p>
                       {editingProject === bug._id ? (
@@ -479,15 +547,200 @@ export default function AdminDashboard() {
 
                   <button
                     onClick={() => assignBug(bug._id)}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded font-semibold hover:bg-indigo-700 transition text-sm whitespace-nowrap"
+                    className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-2 rounded font-semibold transition text-sm whitespace-nowrap shadow-lg"
                   >
                     Assign
                   </button>
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          </>
         )}
+
+        {/* ================= NOTIFICATIONS ================= */}
+        {activeTab === "notifications" && (
+          <>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Notifications</h2>
+                <p className="text-slate-600 text-sm mt-1">System alerts and activities</p>
+              </div>
+
+              <div className="flex gap-3 mb-6">
+                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                  All
+                </button>
+                <button className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg font-semibold hover:border-indigo-300 transition">
+                  Unread
+                </button>
+                <button className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg font-semibold hover:border-indigo-300 transition">
+                  Marked
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {notifications.map((notif) => (
+                  <div key={notif.id} className="border border-slate-200 p-4 rounded-lg hover:bg-slate-50 transition flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="text-slate-900 font-medium">{notif.message}</p>
+                      <p className="text-slate-500 text-xs mt-1">{notif.time}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ml-4 ${
+                      notif.type === "bug" ? "bg-red-100 text-red-700" :
+                      notif.type === "assign" ? "bg-blue-100 text-blue-700" :
+                      notif.type === "project" ? "bg-purple-100 text-purple-700" :
+                      notif.type === "fixed" ? "bg-green-100 text-green-700" :
+                      "bg-slate-100 text-slate-700"
+                    }`}>
+                      {notif.type.charAt(0).toUpperCase() + notif.type.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <button className="mt-6 text-red-600 hover:text-red-700 font-semibold text-sm">
+                Clear All Notifications
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ================= SETTINGS ================= */}
+        {activeTab === "settings" && (
+          <>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-900">System Settings</h2>
+                <p className="text-slate-600 text-sm mt-1">Configure your dashboard and notification preferences</p>
+              </div>
+
+              <div className="space-y-6">
+                {/* Notification Settings */}
+                <div className="border-b border-slate-200 pb-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Notification Preferences</h3>
+                  
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.emailNotifications}
+                        onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
+                        className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-900">Email Notifications</p>
+                        <p className="text-xs text-slate-500">Receive updates via email</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.systemAlerts}
+                        onChange={(e) => setSettings({...settings, systemAlerts: e.target.checked})}
+                        className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-900">System Alerts</p>
+                        <p className="text-xs text-slate-500">Critical system notifications</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.bugAssignmentNotifications}
+                        onChange={(e) => setSettings({...settings, bugAssignmentNotifications: e.target.checked})}
+                        className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-900">Bug Assignment Alerts</p>
+                        <p className="text-xs text-slate-500">Notify when bugs are assigned</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.dailyReport}
+                        onChange={(e) => setSettings({...settings, dailyReport: e.target.checked})}
+                        className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-900">Daily Report Summary</p>
+                        <p className="text-xs text-slate-500">Get daily summary of activities</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Display Settings */}
+                <div className="border-b border-slate-200 pb-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Display Settings</h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-2">Theme Mode</label>
+                      <select 
+                        value={settings.themeMode}
+                        onChange={(e) => setSettings({...settings, themeMode: e.target.value})}
+                        className="w-full border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      >
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-2">Bugs Per Page</label>
+                      <input 
+                        type="number" 
+                        value={settings.maxBugsPerPage}
+                        onChange={(e) => setSettings({...settings, maxBugsPerPage: parseInt(e.target.value)})}
+                        min="5"
+                        max="50"
+                        className="w-full border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Info */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">System Information</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500 font-semibold">Total Users</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{users.length}</p>
+                    </div>
+                    <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500 font-semibold">Total Bugs</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{bugs.length}</p>
+                    </div>
+                    <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500 font-semibold">Active Projects</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{projects.length}</p>
+                    </div>
+                    <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500 font-semibold">Total Developers</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{developers.length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={() => {
+                toast.success("Settings saved successfully!");
+              }} className="mt-8 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-200 shadow-lg">
+                Save Settings
+              </button>
+            </div>
+          </>
+        )}
+        </div>
       </div>
     </div>
   );
