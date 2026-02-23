@@ -5,7 +5,7 @@ import DashboardStats from "../components/DashboardStats";
 import toast from "react-hot-toast";
 import { getUser } from "../utils/auth";
 import AdminSidebar from "../components/AdminSidebar";
-import { Trash2 } from "lucide-react";
+import { Trash2, Edit2, Check, X, Lock } from "lucide-react";
 
 export default function AdminDashboard() {
   const user = getUser();
@@ -20,6 +20,8 @@ export default function AdminDashboard() {
   const [selectedDev, setSelectedDev] = useState({});
   const [selectedProject, setSelectedProject] = useState({});
   const [filter, setFilter] = useState("all");
+  const [editingProject, setEditingProject] = useState(null);
+  const [editProjectValue, setEditProjectValue] = useState("");
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -134,6 +136,22 @@ export default function AdminDashboard() {
     }
   };
 
+  /* ================= UPDATE PROJECT ================= */
+
+  const updateBugProject = async (bugId, projectId) => {
+    try {
+      await api.post("/bugs/assign-project", {
+        bugId,
+        projectId,
+      });
+      toast.success("Project updated");
+      setEditingProject(null);
+      fetchBugs();
+    } catch {
+      toast.error("Update failed");
+    }
+  };
+
   /* ================= DELETE BUG ================= */
 
   const deleteBug = async (bugId) => {
@@ -145,6 +163,38 @@ export default function AdminDashboard() {
       fetchBugs();
     } catch {
       toast.error("Delete failed");
+    }
+  };
+
+  /* ================= DELETE USER ================= */
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm("Delete this user? This action cannot be undone.")) return;
+
+    try {
+      await api.delete(`/users/${userId}`);
+      toast.success("User deleted");
+      fetchUsers();
+      fetchDevelopers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Delete failed");
+    }
+  };
+
+  /* ================= RESET USER PASSWORD ================= */
+
+  const resetPassword = async (userId) => {
+    const newPassword = prompt("Enter new password for this user:");
+    if (!newPassword || newPassword.trim() === "") {
+      toast.error("Password cannot be empty");
+      return;
+    }
+
+    try {
+      await api.put(`/users/${userId}/password`, { password: newPassword });
+      toast.success("Password reset successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Password reset failed");
     }
   };
 
@@ -228,12 +278,31 @@ export default function AdminDashboard() {
               {users.map((u) => (
                 <div
                   key={u._id}
-                  className="border p-3 rounded mb-2 flex justify-between"
+                  className="border p-4 rounded mb-3 flex justify-between items-center hover:bg-slate-50 transition"
                 >
-                  <span>
-                    {u.name} ({u.role})
-                  </span>
-                  <span className="text-slate-500">{u.email}</span>
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-800">{u.name}</p>
+                    <p className="text-sm text-slate-500">{u.email}</p>
+                    <span className="inline-block mt-2 bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-1 rounded">
+                      {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => resetPassword(u._id)}
+                      className="p-2 text-blue-600 hover:bg-blue-100 rounded transition"
+                      title="Reset Password"
+                    >
+                      <Lock size={16} />
+                    </button>
+                    <button
+                      onClick={() => deleteUser(u._id)}
+                      className="p-2 text-red-600 hover:bg-red-100 rounded transition"
+                      title="Delete User"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -313,28 +382,86 @@ export default function AdminDashboard() {
             {filteredBugs.map((bug) => (
               <div
                 key={bug._id}
-                className="bg-white p-6 rounded-xl shadow relative"
+                className="bg-white p-6 rounded-xl shadow"
               >
-                <button
-                  onClick={() => deleteBug(bug._id)}
-                  className="absolute top-4 right-4 p-1 rounded-full text-red-500 hover:bg-red-100"
-                >
-                  <Trash2 size={16} />
-                </button>
-
-                <div className="flex justify-between">
-                  <h2 className="text-xl font-semibold">{bug.title}</h2>
-                  <StatusBadge status={bug.status} />
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold">{bug.title}</h2>
+                    <p className="text-slate-600 text-sm mt-1">{bug.description}</p>
+                  </div>
+                  <div className="flex gap-2 items-start">
+                    <StatusBadge status={bug.status} />
+                    <button
+                      onClick={() => deleteBug(bug._id)}
+                      className="p-1.5 rounded text-red-500 hover:bg-red-100 transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
-                <p className="text-slate-600 mt-2">
-                  {bug.description}
-                </p>
+                {/* Display Project (Auto-selected from Tester) */}
+                <div className="mt-4 p-3 bg-slate-50 rounded border border-slate-200">
+                  <div className="flex justify-between items-center gap-4">
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Project</p>
+                      {editingProject === bug._id ? (
+                        <select
+                          className="w-full border rounded px-2 py-1.5 mt-1 text-sm"
+                          value={editProjectValue}
+                          onChange={(e) => setEditProjectValue(e.target.value)}
+                        >
+                          <option value="">Select Project</option>
+                          {projects.map((p) => (
+                            <option key={p._id} value={p._id}>
+                              {p.projectName}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="text-sm font-semibold text-indigo-600 mt-1">
+                          {bug.project?.projectName || "Not assigned"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {editingProject === bug._id ? (
+                        <>
+                          <button
+                            onClick={() => updateBugProject(bug._id, editProjectValue)}
+                            className="p-1 text-green-600 hover:bg-green-100 rounded transition"
+                            title="Save"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => setEditingProject(null)}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded transition"
+                            title="Cancel"
+                          >
+                            <X size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingProject(bug._id);
+                            setEditProjectValue(bug.project?._id || "");
+                          }}
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded transition"
+                          title="Edit Project"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Assign Developer */}
                 <div className="flex gap-3 mt-4">
                   <select
-                    className="border rounded px-3 py-2"
+                    className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     onChange={(e) =>
                       setSelectedDev({
                         ...selectedDev,
@@ -342,7 +469,7 @@ export default function AdminDashboard() {
                       })
                     }
                   >
-                    <option value="">Select Developer</option>
+                    <option value="">Assign Developer</option>
                     {developers.map((dev) => (
                       <option key={dev._id} value={dev._id}>
                         {dev.name}
@@ -350,27 +477,9 @@ export default function AdminDashboard() {
                     ))}
                   </select>
 
-                  {/* Assign Project */}
-                  <select
-                    className="border rounded px-3 py-2"
-                    onChange={(e) =>
-                      setSelectedProject({
-                        ...selectedProject,
-                        [bug._id]: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map((p) => (
-                      <option key={p._id} value={p._id}>
-                        {p.projectName}
-                      </option>
-                    ))}
-                  </select>
-
                   <button
                     onClick={() => assignBug(bug._id)}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded"
+                    className="bg-indigo-600 text-white px-6 py-2 rounded font-semibold hover:bg-indigo-700 transition text-sm whitespace-nowrap"
                   >
                     Assign
                   </button>

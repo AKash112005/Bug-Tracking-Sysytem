@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 // IMPORTANT: exact path + exact file name
-const AuthController = require("../controllers/authcontroller");
+const AuthController = require("../controllers/AuthController");
 
 // SAFETY CHECK (TEMP – REMOVE LATER)
 if (!AuthController.login) {

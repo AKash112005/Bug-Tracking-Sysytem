@@ -117,3 +117,54 @@ exports.deactivateUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* =========================
+   ADMIN: DELETE USER
+========================= */
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "UserId required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* =========================
+   ADMIN: RESET USER PASSWORD
+========================= */
+exports.resetUserPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
+
+    if (!userId || !password) {
+      return res.status(400).json({ message: "UserId and password required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "User password reset successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

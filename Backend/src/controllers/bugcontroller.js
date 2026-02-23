@@ -27,22 +27,21 @@ exports.assignProject = async (req, res) => {
 
 exports.createBug = async (req, res) => {
   try {
-    const { title, description, project } = req.body;
+    const { title, description, projectId, severity } = req.body;
 
-    if (!title || !description) {
+    if (!title || !description || !projectId) {
       return res.status(400).json({
-        message: "Title and description are required",
+        message: "Title, description and project required",
       });
     }
 
     const bug = await Bug.create({
       title,
       description,
-      project, 
+      project: projectId,
+      severity: severity || "medium",
       createdBy: req.user.id,
       status: "open",
-      assignedTo: null,
-      
     });
 
     res.status(201).json(bug);

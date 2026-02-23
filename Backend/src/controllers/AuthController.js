@@ -4,11 +4,17 @@ const jwt = require("jsonwebtoken");
 
 exports.login = async (req, res) => {
   try {
-    const email = req.body.email.trim().toLowerCase();
-    const password = req.body.password;
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
 
     // 1️⃣ Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: trimmedEmail });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }

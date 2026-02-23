@@ -21,6 +21,11 @@ const bugSchema = new mongoose.Schema(
         enum: ["open", "assigned", "in-progress", "fixed","assigned"],
         default: "open",
     },
+    severity: {
+      type: String,
+      enum: ["low", "medium", "high", "critical"],
+      default: "medium",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
