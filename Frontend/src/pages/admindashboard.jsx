@@ -447,7 +447,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid gap-6">
-              {filteredBugs.map((bug) => (
+              {filteredBugs.filter(bug => bug.status !== "fixed").map((bug) => (
                 <div
                   key={bug._id}
                   className="bg-white p-6 rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition"
@@ -555,6 +555,59 @@ export default function AdminDashboard() {
               </div>
             ))}
             </div>
+
+            {/* Fixed Bugs Section */}
+            {filteredBugs.filter(bug => bug.status === "fixed").length > 0 && (
+              <div className="mt-10">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-slate-900">Fixed Bugs</h3>
+                  <p className="text-slate-600 text-sm mt-1">Completed and closed issues</p>
+                </div>
+
+                <div className="grid gap-6">
+                  {filteredBugs.filter(bug => bug.status === "fixed").map((bug) => (
+                    <div
+                      key={bug._id}
+                      className="bg-green-50 p-6 rounded-xl shadow-lg border-2 border-green-200 hover:shadow-xl transition"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h2 className="text-xl font-bold text-slate-900">{bug.title}</h2>
+                          <p className="text-slate-600 text-sm mt-1">{bug.description}</p>
+                        </div>
+                        <div className="flex gap-2 items-start">
+                          <StatusBadge status={bug.status} />
+                          <button
+                            onClick={() => deleteBug(bug._id)}
+                            className="p-1.5 rounded text-red-500 hover:bg-red-100 transition"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Display Project Info */}
+                      <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Project</p>
+                            <p className="text-sm font-semibold text-green-700 mt-1">
+                              {bug.project?.projectName || "Not assigned"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Assigned To</p>
+                            <p className="text-sm font-semibold text-green-700 mt-1">
+                              {bug.assignedTo?.name || "Unassigned"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
