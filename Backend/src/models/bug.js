@@ -18,13 +18,18 @@ const bugSchema = new mongoose.Schema(
 
     status: {
         type: String,
-        enum: ["open", "assigned", "in-progress", "fixed","assigned"],
+        enum: ["open", "assigned", "in-progress", "fixed"],
         default: "open",
     },
     severity: {
       type: String,
       enum: ["low", "medium", "high", "critical"],
       default: "medium",
+    },
+    bugType: {
+      type: String,
+      enum: ["UI", "Backend", "Database", "DevOps", "QA", "Other"],
+      default: "Other",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -35,10 +40,14 @@ const bugSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    assignedToTeam: {
+      type: Boolean,
+      default: false,
+    },
     
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Bug", bugSchema); //  REQUIRED
-module.exports = mongoose.models.Bug || mongoose.model("Bug", bugSchema);
+module.exports =
+  mongoose.models.Bug || mongoose.model("Bug", bugSchema);

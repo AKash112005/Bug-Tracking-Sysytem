@@ -11,6 +11,7 @@ export default function TesterDashboard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("medium");
+  const [bugType, setBugType] = useState("Other");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +43,7 @@ export default function TesterDashboard() {
         description,
         projectId: selectedProject,
         severity,
+        bugType,
       });
 
       setMessage("✅ Bug reported successfully");
@@ -49,6 +51,7 @@ export default function TesterDashboard() {
       setTitle("");
       setDescription("");
       setSeverity("medium");
+      setBugType("Other");
     } catch (err) {
       setMessage("❌ Failed to create bug");
     }
@@ -142,6 +145,25 @@ export default function TesterDashboard() {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
+              </select>
+            </div>
+
+            {/* Bug Type */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Bug Type <span className="text-xs text-slate-500">(Auto-assigns to relevant role)</span>
+              </label>
+              <select
+                value={bugType}
+                onChange={(e) => setBugType(e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              >
+                <option value="UI">🎨 UI Issue</option>
+                <option value="Backend">⚙️ Backend Issue</option>
+                <option value="Database">🗄️ Database Issue</option>
+                <option value="DevOps">🔧 DevOps/Infrastructure</option>
+                <option value="QA">✅ QA/Testing Issue</option>
+                <option value="Other">❓ Other</option>
               </select>
             </div>
 

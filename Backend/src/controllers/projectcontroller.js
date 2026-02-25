@@ -1,49 +1,49 @@
-const Project = require("../models/Project");
+const mongoose = require("mongoose");
 
-/* =============================
-   ADMIN: CREATE PROJECT
-============================= */
-exports.createProject = async (req, res) => {
-  try {
-    const { projectId, projectName, description } = req.body;
+const projectSchema = new mongoose.Schema(
+  {
+    projectId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    projectName: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
 
-    if (!projectId || !projectName) {
-      return res.status(400).json({
-        message: "Project ID and Name are required",
-      });
-    }
+    // ✅ ADD THIS TEAM FIELD
+    team: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        role: {
+          type: String,
+          required: true,
+        },
+        addedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        addedDate: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-    const exists = await Project.findOne({ projectId });
-    if (exists) {
-      return res.status(400).json({
-        message: "Project ID already exists",
-      });
-    }
-
-    const project = await Project.create({
-      projectId,
-      projectName,
-      description,
-      createdBy: req.user.id,
-    });
-
-    res.status(201).json({
-      message: "Project created successfully",
-      project,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/* =============================
-   GET ALL PROJECTS
-============================= */
-exports.getProjects = async (req, res) => {
-  try {
-    const projects = await Project.find().populate("createdBy", "name email");
-    res.json(projects);
-  } catch {
-    res.status(500).json({ message: "Server error" });
-  }
-};
+module.exports =
+  mongoose.models.Project || mongoose.model("Project", projectSchema);

@@ -5,7 +5,7 @@ import DashboardStats from "../components/DashboardStats";
 import toast from "react-hot-toast";
 import { getUser } from "../utils/auth";
 import AdminSidebar from "../components/AdminSidebar";
-import { Trash2, Edit2, Check, X, Lock } from "lucide-react";
+import { Trash2, Edit2, Check, X, Lock, Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function AdminDashboard() {
   const user = getUser();
@@ -54,6 +54,22 @@ export default function AdminDashboard() {
     projectName: "",
     description: "",
   });
+
+  // Team management state
+  const [expandedProject, setExpandedProject] = useState(null);
+  const [projectTeams, setProjectTeams] = useState({});
+  const [teamMemberForm, setTeamMemberForm] = useState({});
+  const [selectedTeamMemberRole, setSelectedTeamMemberRole] = useState({});
+
+  const TEAM_ROLES = [
+    "Frontend Developer",
+    "Backend Developer",
+    "Database Administrator",
+    "UI Designer",
+    "QA Lead",
+    "DevOps Engineer",
+    "Project Manager",
+  ];
 
   /* ================= FETCH FUNCTIONS ================= */
 
@@ -130,30 +146,8 @@ export default function AdminDashboard() {
     }
   };
 
-  /* ================= ASSIGN BUG ================= */
-
-  const assignBug = async (bugId) => {
-    const developerId = selectedDev[bugId];
-    const projectId = selectedProject[bugId];
-
-    if (!developerId) {
-      toast.error("Select developer");
-      return;
-    }
-
-    try {
-      await api.post("/bugs/assign", {
-        bugId,
-        developerId,
-        projectId,
-      });
-
-      toast.success("Bug assigned");
-      fetchBugs();
-    } catch {
-      toast.error("Assign failed");
-    }
-  };
+  /* ================= ASSIGN BUG (REMOVED - AUTO-ASSIGN) ================= */
+  // Bug assignment is now automatic based on project teams
 
   /* ================= UPDATE PROJECT ================= */
 
@@ -214,6 +208,89 @@ export default function AdminDashboard() {
       toast.success("Password reset successfully");
     } catch (err) {
       toast.error(err.response?.data?.message || "Password reset failed");
+    }
+  };
+
+  /* ================= TEAM MANAGEMENT FUNCTIONS ================= */
+
+  const toggleProjectTeam = async (projectId) => {
+    if (expandedProject === projectId) {
+      setExpandedProject(null);
+    } else {
+      try {
+        const res = await api.get(`/projects/${projectId}/team`);
+        setProjectTeams({ ...projectTeams, [projectId]: res.data });
+        setExpandedProject(projectId);
+      } catch (err) {
+        toast.error("Failed to load team members");
+      }
+    }
+  };
+
+  const addTeamMember = async (projectId) => {
+    const userId = teamMemberForm[projectId]?.userId;
+    const role = selectedTeamMemberRole[projectId];
+
+    if (!userId || !role) {
+      toast.error("Please select both developer and role");
+      return;
+    }
+
+    try {
+      const res = await api.post(`/projects/${projectId}/team`, {
+        userId,
+        role,
+      });
+
+      setProjectTeams({
+        ...projectTeams,
+        [projectId]: res.data.team,
+      });
+
+      setTeamMemberForm({
+        ...teamMemberForm,
+        [projectId]: { userId: "", developerName: "" },
+      });
+      setSelectedTeamMemberRole({
+        ...selectedTeamMemberRole,
+        [projectId]: "",
+      });
+
+      toast.success("Team member added successfully");
+      fetchProjects();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to add team member");
+    }
+  };
+
+  const removeTeamMember = async (projectId, userId) => {
+    if (!window.confirm("Remove this team member from the project?")) return;
+
+    try {
+      const res = await api.delete(`/projects/${projectId}/team/${userId}`);
+      setProjectTeams({
+        ...projectTeams,
+        [projectId]: res.data.team,
+      });
+      toast.success("Team member removed successfully");
+      fetchProjects();
+    } catch (err) {
+      toast.error("Failed to remove team member");
+    }
+  };
+
+  const updateTeamMemberRole = async (projectId, userId, newRole) => {
+    try {
+      const res = await api.put(`/projects/${projectId}/team/${userId}`, {
+        role: newRole,
+      });
+      setProjectTeams({
+        ...projectTeams,
+        [projectId]: res.data.team,
+      });
+      toast.success("Role updated successfully");
+    } catch (err) {
+      toast.error("Failed to update role");
     }
   };
 
@@ -392,20 +469,156 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+            {/* Projects with Team Management */}
             <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Existing Projects</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Projects & Team Management</h2>
                 <p className="text-slate-600 text-sm mt-1">{projects.length} total projects</p>
               </div>
 
-              {projects.map((p) => (
-                <div key={p._id} className="border border-slate-200 p-4 rounded-lg mb-3 hover:shadow-md hover:border-indigo-300 transition">
-                  <h3 className="font-bold text-lg text-slate-900">{p.projectName}</h3>
-                  <p className="text-sm text-slate-500">
-                    ID: {p.projectId}
-                  </p>
-                </div>
-              ))}
+              <div className="space-y-4">
+                {projects.map((p) => (
+                  <div key={p._id} className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition">
+                    {/* Project Header - Clickable to expand */}
+                    <div
+                      onClick={() => toggleProjectTeam(p._id)}
+                      className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 cursor-pointer hover:from-indigo-100 hover:to-blue-100 transition flex items-center justify-between"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg text-slate-900">{p.projectName}</h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          ID: {p.projectId} • Team: {p.team?.length || 0} members
+                        </p>
+                        {p.description && (
+                          <p className="text-sm text-slate-500 mt-2">{p.description}</p>
+                        )}
+                      </div>
+                      <button className="p-2 rounded-lg hover:bg-white transition text-slate-600">
+                        {expandedProject === p._id ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Team Management Section - Expands when clicked */}
+                    {expandedProject === p._id && (
+                      <div className="border-t border-slate-200 p-4 bg-slate-50">
+                        {/* Add Team Member Section */}
+                        <div className="mb-6 p-4 bg-white rounded-lg border border-indigo-200">
+                          <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Plus size={18} className="text-indigo-600" />
+                            Add Team Member
+                          </h4>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <select
+                              className="border border-slate-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                              value={teamMemberForm[p._id]?.userId || ""}
+                              onChange={(e) => {
+                                const selected = users.find(u => u._id === e.target.value);
+                                setTeamMemberForm({
+                                  ...teamMemberForm,
+                                  [p._id]: {
+                                    userId: e.target.value,
+                                    developerName: selected?.name || "",
+                                  },
+                                });
+                              }}
+                            >
+                              <option value="">Select Developer</option>
+                              {users
+                                .filter(u => !p.team?.some(t => t.userId._id === u._id))
+                                .map((u) => (
+                                  <option key={u._id} value={u._id}>
+                                    {u.name} ({u.role})
+                                  </option>
+                                ))}
+                            </select>
+
+                            <select
+                              className="border border-slate-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                              value={selectedTeamMemberRole[p._id] || ""}
+                              onChange={(e) =>
+                                setSelectedTeamMemberRole({
+                                  ...selectedTeamMemberRole,
+                                  [p._id]: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Select Role</option>
+                              {TEAM_ROLES.map((role) => (
+                                <option key={role} value={role}>
+                                  {role}
+                                </option>
+                              ))}
+                            </select>
+
+                            <button
+                              onClick={() => addTeamMember(p._id)}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
+                            >
+                              Add Member
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Team Members List */}
+                        <div>
+                          <h4 className="font-bold text-slate-900 mb-3">Team Members ({p.team?.length || 0})</h4>
+
+                          {p.team && p.team.length > 0 ? (
+                            <div className="space-y-2">
+                              {p.team.map((member) => (
+                                <div
+                                  key={member.userId._id}
+                                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 transition"
+                                >
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-slate-900">{member.userId.name}</p>
+                                    <p className="text-xs text-slate-500">{member.userId.email}</p>
+                                  </div>
+
+                                  <select
+                                    className="mx-3 border border-slate-300 p-1.5 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={member.role}
+                                    onChange={(e) =>
+                                      updateTeamMemberRole(p._id, member.userId._id, e.target.value)
+                                    }
+                                  >
+                                    {TEAM_ROLES.map((role) => (
+                                      <option key={role} value={role}>
+                                        {role}
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  <span className="text-xs text-slate-500 mr-3 whitespace-nowrap">
+                                    Added: {new Date(member.addedDate).toLocaleDateString()}
+                                  </span>
+
+                                  <button
+                                    onClick={() => removeTeamMember(p._id, member.userId._id)}
+                                    className="p-2 text-red-600 hover:bg-red-100 rounded transition"
+                                    title="Remove Member"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-white rounded-lg border border-slate-200 text-center">
+                              <p className="text-slate-500 text-sm">No team members assigned yet</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -526,32 +739,13 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Assign Developer */}
-                <div className="flex gap-3 mt-4">
-                  <select
-                    className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    onChange={(e) =>
-                      setSelectedDev({
-                        ...selectedDev,
-                        [bug._id]: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Assign Developer</option>
-                    {developers.map((dev) => (
-                      <option key={dev._id} value={dev._id}>
-                        {dev.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => assignBug(bug._id)}
-                    className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-2 rounded font-semibold transition text-sm whitespace-nowrap shadow-lg"
-                  >
-                    Assign
-                  </button>
-                </div>
+                  {/* Display Assigned Developer */}
+                  <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Auto-Assigned To</p>
+                    <p className="text-sm font-semibold text-green-700 mt-1">
+                      {bug.assignedTo?.name || "Unassigned"} {bug.assignedToTeam && "(Team)"}
+                    </p>
+                  </div>
               </div>
             ))}
             </div>
