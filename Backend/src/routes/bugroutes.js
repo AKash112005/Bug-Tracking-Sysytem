@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const functionalRole = require("../middleware/functionalRoleMiddleware");
 const auth = require("../middleware/authMiddleware");
 const role = require("../middleware/roleMiddleware");
 const { assignProject } = require("../controllers/bugcontroller");
@@ -35,4 +35,5 @@ router.delete("/:id", auth, role(["admin"]), deleteBug);
 
 router.post("/assign-project", auth, role(["admin"]), assignProject);
 
+router.put("/status",auth,role(["developer"]),functionalRole, updateStatus);
 module.exports = router;

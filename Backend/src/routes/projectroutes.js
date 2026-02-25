@@ -4,6 +4,7 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const role = require("../middleware/roleMiddleware");
 
+
 const {
   createProject,
   getProjects,
@@ -14,6 +15,9 @@ const {
   getProjectTeam,
 } = require("../controllers/projectcontroller");
 
+console.log("auth:", auth);
+console.log("role:", role);
+console.log("createProject:", createProject);
 /* Admin only create */
 router.post("/", auth, role(["admin"]), createProject);
 
@@ -27,11 +31,7 @@ router.get("/:projectId", auth, getProjectDetail);
 
 /* Add team member to project */
 router.post(
-  "/:projectId/team",
-  auth,
-  role(["admin"]),
-  addTeamMember
-);
+  "/:projectId/team",auth,role(["admin"]),addTeamMember);
 
 /* Get project team */
 router.get("/:projectId/team", auth, getProjectTeam);
